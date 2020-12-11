@@ -1,0 +1,77 @@
+// okauth.go kee > 2020/11/27
+
+package main
+
+import (
+	"fmt"
+	"net/http"
+	h "okauth/http"
+)
+
+type Router struct {
+	routers map[string]interface{}
+}
+
+func NewRouter() *Router {
+	return &Router{make(map[string]interface{})}
+}
+
+func echo(v ...interface{}) {
+	fmt.Println(v...)
+}
+
+func (r *Router) Get(path string, handler interface{}) {
+	r.routers[path] = handler
+}
+
+func (_r *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Fprintf(w, "Have an Panic: %v", r)
+		}
+	}()
+
+	request := h.NewRequest(r)
+
+	r.Header.Add("X-Apikey", "2012220")
+	fmt.Fprintf(w, "Host   :%s \r\n", request.Host)
+	fmt.Fprintf(w, "Proto  :%s \r\n", request.Proto)
+	fmt.Fprintf(w, "Method :%s \r\n", request.Method)
+	fmt.Fprintf(w, "Path   :%s \r\n", request.Path)
+	fmt.Fprintf(w, "Headers:%s \r\n", request.Headers)
+	fmt.Fprintf(w, "URI    :%s \r\n", request.RequestURI)
+	fmt.Fprintf(w, "Paramments: %s \r\n", request.Values)
+	// fmt.Fprintf(w, "UserAgent:%s \r\n", r.UserAgent())
+	// fmt.Fprintf(w, "Header:X-Token =", r.Header.Get("X-Token"))
+	fmt.Fprintf(w, "Raw: %s \r\n", string(request.GetRaw()))
+
+	n := "f[a]"
+	if f, ok := request.File(n); ok {
+		f.CopyTo("./test/store/")
+		size := float64(f.Size) / 1024 / 1024
+		mime := f.MimeHeader
+		fmt.Fprintf(w, "%s FILENAME: %s SIZE: %.2f MB MIME: %s \n", n, f.Filename, size, mime)
+	}
+
+	if f, ok := request.File("f.b"); ok {
+		size := float64(f.Size) / 1024 / 1024
+		mime := f.MimeHeader
+		fmt.Fprintf(w, "FILENAME: %s SIZE: %.2f MB MIME: %s \n", f.Filename, size, mime)
+	}
+
+	defer func() {
+		if "/test" == r.URL.Path {
+			panic(fmt.Sprintf("bad request"))
+		}
+		fmt.Fprintf(w, "Hello, %q", r.URL.Path)
+	}()
+}
+
+func (r *Router) Run(addr string) {
+	http.ListenAndServe(addr, r)
+}
+
+func main() {
+	_router := NewRouter()
+	_router.Run(":8080")
+}

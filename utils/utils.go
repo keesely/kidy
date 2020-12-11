@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -92,82 +93,6 @@ func Rand(x, y int) int {
 	return rand.Intn(y-x+1) + x
 }
 
-const (
-	KIRIS_STR_PAD_LEFT  = 0
-	KIRIS_STR_PAD_RIGHT = 1
-	KIRIS_STR_PAD_BOTH  = 2
-)
-
-/**
- * StrPad 定义把规定字符串填充为新的长度
- *
- * @param {string} str     要填充的字符串
- * @param {string} pad     提供填充的字符串
- * @param {int}    length  规定填充的字符串的长度
- * @param {int}    padType 规定填充位置
- * 预置常量
- * - KIRIS_STR_PAD_LEFT  = 0 填充字符串左侧
- * - KIRIS_STR_PAD_RIGHT = 1 填充字符串右侧
- * - KIRIS_STR_PAD_BOTH  = 2 填充字符串两侧, 如果填充不是偶数，则右侧获得额外填充
- *
- * @return string
- * */
-func StrPad(str, pad string, length, padType int) string {
-	LEN := StrCount(str)
-
-	if LEN >= length {
-		return str
-	}
-
-	half := 0
-	if 2 == padType {
-		half = (length - LEN) / 2
-	}
-
-	l_pad := ""
-	r_pad := ""
-
-	_pad := []rune(pad)
-	for i := LEN; i < length; {
-		for _, p := range _pad {
-			i++
-			if i > length {
-				break
-			}
-
-			s := string(p)
-			if 0 < padType {
-				r_pad += s
-				if KIRIS_STR_PAD_BOTH == padType && 0 < half && i < length {
-					i++
-					l_pad += s
-				}
-			} else if 0 == padType {
-				l_pad += s
-			}
-		}
-	}
-
-	return l_pad + str + r_pad
-}
-
-/* 获取字符串字数
- * @param {string} str 要计算的字符串
- *
- * @return int
- */
-func StrCount(str string) int {
-	return len([]rune(str))
-}
-
-//截取字符串
-func SubStr(str string, pos, length int) string {
-	runes := []rune(str)
-	l := pos + length
-	l = Ternary(l > len(runes), len(runes), l).(int)
-	return string(runes[pos:l])
-}
-
 // 接口转换到结构体
 func ConverStruct(inter map[string]interface{}, conver interface{}, tag string) {
 	cRef := reflect.ValueOf(conver).Elem()
@@ -185,4 +110,17 @@ func ConverStruct(inter map[string]interface{}, conver interface{}, tag string) 
 		}
 	}
 	return
+}
+
+func VarDump(args ...interface{}) {
+	fmt.Println("{")
+	for i, val := range args {
+		fmt.Println("  ["+strconv.Itoa(i)+"]", Typeof(val), " => ", val)
+	}
+	fmt.Println("}")
+}
+
+func DumpDone(args ...interface{}) {
+	VarDump(args...)
+	os.Exit(1)
 }
